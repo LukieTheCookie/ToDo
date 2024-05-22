@@ -41,7 +41,6 @@ class ToDoApplicationTests {
 
 	@Test
 	public void testCreateTask() {
-		// Arrange
 		TaskDto taskDto = new TaskDto();
 		taskDto.setTitle("Test Task");
 		taskDto.setDescription("Test Description");
@@ -57,10 +56,8 @@ class ToDoApplicationTests {
 
 		doReturn(savedTask).when(taskRepository).save(any(Task.class));
 
-		// Act
 		TaskDto createdTask = taskService.createTask(taskDto);
 
-		// Assert
 		assertNotNull(createdTask);
 		assertEquals(1L, createdTask.getId());
 		assertEquals("Test Task", createdTask.getTitle());
@@ -92,7 +89,6 @@ class ToDoApplicationTests {
 
 	@Test
 	public void testGetTaskById_Success() {
-		// Arrange
 		long taskId = 1L;
 		Task task = new Task();
 		task.setId(taskId);
@@ -103,10 +99,8 @@ class ToDoApplicationTests {
 
 		when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
 
-		// Act
 		TaskDto result = taskService.getTaskById(taskId);
 
-		// Assert
 		assertNotNull(result);
 		assertEquals(task.getId(), result.getId());
 		assertEquals(task.getTitle(), result.getTitle());
