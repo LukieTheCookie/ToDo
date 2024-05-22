@@ -18,6 +18,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 import java.util.List;
 
 import java.util.Optional;
@@ -113,20 +115,146 @@ class ToDoApplicationTests {
 		assertEquals(task.isCompleted(), result.isCompleted());
 	}
 
-//	Unit Tests to complete:
-//	Ensure that a task can be retrieved successfully by its ID.
-//
-//	Check that the number of retrieved tasks matches the number of tasks in the database.
-//
-//			Test for handling the case when the task ID does not exist.
-//	Ensure that a task can be updated successfully with valid input.
-//
-//	Check that the task is no longer present in the database after deletion.
-//
-//	Check that the completed status of the task matches the input parameter.
-//
-//	Test for handling null or empty input parameters.
-//	Test for handling invalid task IDs.
-//	Test for handling errors that may occur during database operations.
+	@Test
+	public void testGetAllTasks_Success() {
+		Task task1 = new Task();
+		task1.setId(1L);
+		task1.setTitle("Task 1");
+		task1.setDescription("Description 1");
+		task1.setDueDate("2024-05-21");
+		task1.setCompleted(false);
+
+		Task task2 = new Task();
+		task2.setId(2L);
+		task2.setTitle("Task 2");
+		task2.setDescription("Description 2");
+		task2.setDueDate("2024-05-22");
+		task2.setCompleted(true);
+
+		List<Task> mockTasks = Arrays.asList(task1, task2);
+
+		when(taskRepository.findAll()).thenReturn(mockTasks);
+
+		List<TaskDto> result = taskService.getAllTasks();
+
+		assertNotNull(result);
+		assertEquals(2, result.size());
+	}
+
+	@Test
+	public void testUpdateTask_Success() {
+		long taskId = 1L;
+		Task existingTask = new Task();
+		existingTask.setId(taskId);
+		existingTask.setTitle("Existing Task");
+		existingTask.setDescription("Existing Description");
+		existingTask.setDueDate("2024-05-21");
+		existingTask.setCompleted(false);
+
+		TaskDto updatedTaskDto = new TaskDto();
+		updatedTaskDto.setTitle("Updated Task");
+		updatedTaskDto.setDescription("Updated Description");
+		updatedTaskDto.setDueDate("2024-06-21");
+		updatedTaskDto.setCompleted(true);
+
+		when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTask));
+		when(taskRepository.save(any(Task.class))).thenReturn(existingTask);
+
+		TaskDto result = taskService.updateTask(taskId, updatedTaskDto);
+
+		assertNotNull(result);
+		assertEquals(updatedTaskDto.getTitle(), result.getTitle());
+		assertEquals(updatedTaskDto.getDescription(), result.getDescription());
+		assertEquals(updatedTaskDto.getDueDate(), result.getDueDate());
+		assertTrue(result.isCompleted());
+	}
+
+	@Test
+	public void testDeleteTask_Success() {
+		long taskId = 1L;
+		Task task = new Task();
+		task.setId(taskId);
+		task.setTitle("Task to be deleted");
+		task.setDescription("Description");
+		task.setDueDate("2024-05-21");
+		task.setCompleted(false);
+
+		when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+		doNothing().when(taskRepository).deleteById(taskId);
+
+		taskService.deleteTask(taskId);
+
+		verify(taskRepository, times(1)).deleteById(taskId);
+	}
+
+	@Test
+	public void testUpdateCompletedStatus_Success() {
+		long taskId = 1L;
+		Task task = new Task();
+		task.setId(taskId);
+		task.setTitle("Task to be updated");
+		task.setDescription("Description");
+		task.setDueDate("2024-05-21");
+		task.setCompleted(false);
+
+		when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+		when(taskRepository.save(any(Task.class))).thenReturn(task);
+
+		TaskDto result = taskService.updateCompletedStatus(taskId, true);
+
+		assertNotNull(result);
+		assertTrue(result.isCompleted());
+	}
+
+	@Test
+	public void testHandleNullOrEmptyInput() {
+		long taskId = 1L;
+
+		assertThrows(RuntimeException.class, () -> {
+			taskService.updateTask(taskId, null);
+		});
+
+		assertThrows(RuntimeException.class, () -> {
+			taskService.createTask(null);
+		});
+
+		TaskDto emptyTaskDto = new TaskDto();
+
+		assertThrows(RuntimeException.class, () -> {
+			taskService.createTask(emptyTaskDto);
+		});
+	}
+
+	@Test
+	public void testHandleInvalidTaskIds() {
+		long invalidTaskId = -1L;
+
+		assertThrows(RuntimeException.class, () -> {
+			taskService.getTaskById(invalidTaskId);
+		});
+
+		assertThrows(RuntimeException.class, () -> {
+			taskService.updateTask(invalidTaskId, new TaskDto());
+		});
+
+		assertThrows(RuntimeException.class, () -> {
+			taskService.deleteTask(invalidTaskId);
+		});
+
+		assertThrows(RuntimeException.class, () -> {
+			taskService.updateCompletedStatus(invalidTaskId, true);
+		});
+	}
+
+	@Test
+	public void testHandleDatabaseErrors() {
+		long taskId = 1L;
+
+		when(taskRepository.findById(taskId)).thenThrow(new RuntimeException("Database error"));
+
+		assertThrows(RuntimeException.class, () -> {
+			taskService.getTaskById(taskId);
+		});
+	}
 
 }
