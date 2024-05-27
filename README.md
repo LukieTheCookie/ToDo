@@ -1,3 +1,8 @@
+Requirements:
+  - Java 17
+  - Springboot3
+  - mySql
+
 To configure this application to run:
 
 * Using mySql *
